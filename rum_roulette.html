@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rum Roulette – Junge Kaji</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #150000;
+    color: #F2D9C0;
+    font-family: sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 2.2rem;
+    color: #BF2020;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  p.tagline {
+    color: #C49A6C;
+    text-align: center;
+    letter-spacing: 4px;
+    font-size: 0.85rem;
+  }
+  #wheel-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas { display: block; }
+  #spin-btn {
+    background: #BF2020;
+    color: #F9EDE0;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  #spin-btn:hover { background: #8B1A1A; }
+  #spin-btn:disabled { background: #4a1010; cursor: not-allowed; }
+  #result {
+    background: #2a0505;
+    border: 1px solid #8B1A1A;
+    border-radius: 8px;
+    padding: 20px 32px;
+    text-align: center;
+    min-width: 280px;
+    min-height: 60px;
+  }
+  #result .label { color: #C49A6C; font-size: 0.8rem; letter-spacing: 3px; margin-bottom: 6px; }
+  #result .name { color: #F2D9C0; font-size: 1.4rem; }
+  #result .desc { color: #9A7A5A; font-size: 0.9rem; margin-top: 6px; }
+
+  /* Modal */
+  #modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: #1e0303;
+    border: 1px solid #8B1A1A;
+    border-radius: 10px;
+    padding: 32px;
+    max-width: 420px;
+    width: 90%;
+    position: relative;
+  }
+  #modal h2 { color: #BF2020; margin-bottom: 6px; }
+  #modal .modal-type { color: #C49A6C; font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 16px; }
+  #modal p { color: #F2D9C0; line-height: 1.7; font-size: 0.95rem; }
+  #modal ul { color: #F9EDE0; padding-left: 18px; margin: 10px 0; line-height: 1.8; font-size: 0.9rem; }
+  #modal ol { color: #F9EDE0; padding-left: 18px; margin: 10px 0; line-height: 1.8; font-size: 0.9rem; }
+  #modal-close {
+    position: absolute; top: 12px; right: 16px;
+    background: none; border: none; color: #9A7A5A;
+    font-size: 1.4rem; cursor: pointer;
+  }
+  #modal-close:hover { color: #F2D9C0; }
+</style>
+</head>
+<body>
+
+<img src="./logo.png" alt="Junge Kaji" style="max-height:70px;object-fit:contain;" onerror="this.style.display='none'">
+<h1>RUM ROULETTE</h1>
+<p class="tagline">SPIN · SIP · SURRENDER</p>
+
+<div id="wheel-wrap">
+  <canvas id="wheel" width="360" height="360"></canvas>
+</div>
+
+<button id="spin-btn">SPIN</button>
+
+<div id="result">
+  <div class="label">RESULT</div>
+  <div class="name" id="result-name">—</div>
+  <div class="desc" id="result-desc"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div id="modal">
+    <button id="modal-close">✕</button>
+    <div class="modal-type" id="modal-type"></div>
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const SEGMENTS = [
+  {
+    name: "The Classic",
+    type: "COCKTAIL",
+    color: "#8B1A1A",
+    desc: "Highland Rum & Soda",
+    ingredients: ["60ml Highland Rum","15ml lime juice","10ml simple syrup","Soda water","Lime to garnish"],
+    method: ["Fill glass with ice.","Pour rum and lime juice.","Add simple syrup.","Top with soda water.","Garnish with lime."]
+  },
+  {
+    name: "Merch Drop",
+    type: "GIFT",
+    color: "#5a2a00",
+    desc: "Branded tumbler or bandana",
+    info: "Show this result to your bartender to claim your Junge Kaji merch. One per customer."
+  },
+  {
+    name: "The Daredevil",
+    type: "COCKTAIL",
+    color: "#BF2020",
+    desc: "Spiced Chili-Mango Rum Fizz",
+    ingredients: ["60ml Highland Spiced Rum","45ml mango purée","15ml chili syrup","20ml lime juice","Ginger beer","Chili & lime to garnish"],
+    method: ["Muddle chili in shaker.","Add rum, mango, syrup, lime with ice.","Shake hard for 15 seconds.","Strain over fresh ice.","Top with ginger beer, garnish."]
+  },
+  {
+    name: "Double Down",
+    type: "OFFER",
+    color: "#3d1a00",
+    desc: "Buy 1 Get 1 Free",
+    info: "Valid on any Junge Kaji cocktail. Show this screen to your bartender. One use per visit."
+  },
+  {
+    name: "The Fresh Start",
+    type: "COCKTAIL",
+    color: "#6b1010",
+    desc: "Highland Mojito",
+    ingredients: ["50ml Highland Rum","25ml lime juice","15ml sugar syrup","12–15 fresh mint leaves","Soda water","Mint & lime to garnish"],
+    method: ["Clap mint leaves to release aroma.","Muddle lightly with lime juice and syrup.","Fill glass with crushed ice.","Pour in rum.","Top with soda, stir from bottom, garnish."]
+  },
+  {
+    name: "Spin Again",
+    type: "WILDCARD",
+    color: "#4a0a0a",
+    desc: "The wheel has more to say…",
+    info: "Fate isn't done with you. Spinning again in 2 seconds…"
+  },
+  {
+    name: "The Sunset",
+    type: "COCKTAIL",
+    color: "#7a1515",
+    desc: "Passionfruit & Ginger Punch",
+    ingredients: ["50ml Highland Dark Rum","60ml passionfruit juice","20ml ginger syrup","15ml lime juice","Passionfruit to garnish"],
+    method: ["Optional: rim glass with chili salt.","Shake all ingredients with ice for 12 seconds.","Strain over large ice cube.","Garnish with halved passionfruit."]
+  },
+  {
+    name: "House Special",
+    type: "VIP",
+    color: "#BF2020",
+    desc: "Bartender's secret cocktail",
+    info: "The recipe changes nightly. Trust the wheel. Ask your bartender — they know what to do.",
+    jackpot: true
+  }
+];
+
+// Draw wheel
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const cx = canvas.width / 2, cy = canvas.height / 2, R = 155;
+const N = SEGMENTS.length;
+const slice = (2 * Math.PI) / N;
+
+let currentAngle = 0;
+let spinning = false;
+
+function drawWheel(angle) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI);
+  ctx.fillStyle = '#3a0a0a';
+  ctx.fill();
+  ctx.strokeStyle = '#C49A6C';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  for (let i = 0; i < N; i++) {
+    const start = angle + i * slice;
+    const end = start + slice;
+    const seg = SEGMENTS[i];
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, start, end);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.strokeStyle = '#150000';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#F2D9C0';
+    ctx.font = 'bold 11px sans-serif';
+    // Wrap long names
+    const words = seg.name.split(' ');
+    if (words.length > 2) {
+      ctx.fillText(words.slice(0, 2).join(' '), R - 10, -5);
+      ctx.fillText(words.slice(2).join(' '), R - 10, 8);
+    } else {
+      ctx.fillText(seg.name, R - 10, 4);
+    }
+    ctx.restore();
+  }
+
+  // Centre cap
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = '#150000';
+  ctx.fill();
+  ctx.strokeStyle = '#C49A6C';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Pointer at 3 o'clock (right side)
+  const px = cx + R + 6;
+  ctx.beginPath();
+  ctx.moveTo(px + 16, cy);
+  ctx.lineTo(px, cy - 9);
+  ctx.lineTo(px, cy + 9);
+  ctx.closePath();
+  ctx.fillStyle = '#F2D9C0';
+  ctx.fill();
+}
+
+drawWheel(0);
+
+// Spin logic
+const btn = document.getElementById('spin-btn');
+
+function getWinner(finalAngle) {
+  // Pointer at 0 rad (3 o'clock). Normalize angle to [0, 2PI)
+  let a = ((-finalAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(a / slice) % N;
+}
+
+// Audio
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playTick() {
+  const ac = getAudio();
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.connect(g); g.connect(ac.destination);
+  o.frequency.value = 800;
+  g.gain.setValueAtTime(0.15, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.05);
+  o.start(); o.stop(ac.currentTime + 0.05);
+}
+
+function playFanfare(jackpot) {
+  const ac = getAudio();
+  const notes = jackpot ? [523, 659, 784, 1047, 1319] : [523, 659, 784, 1047];
+  notes.forEach((freq, i) => {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.value = freq;
+    const t = ac.currentTime + i * 0.12;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.25, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.start(t); o.stop(t + 0.4);
+  });
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  btn.disabled = true;
+  if (!audioCtx) audioCtx = new AudioCtx();
+
+  const extraSpins = 5 + Math.floor(Math.random() * 5);
+  const randomStop = Math.random() * 2 * Math.PI;
+  const totalAngle = extraSpins * 2 * Math.PI + randomStop;
+  const duration = 4000;
+  const start = performance.now();
+  const startAngle = currentAngle;
+  let lastSegment = -1;
+
+  function easeOut(t) {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  function frame(now) {
+    const elapsed = now - start;
+    const t = Math.min(elapsed / duration, 1);
+    currentAngle = startAngle + totalAngle * easeOut(t);
+    drawWheel(currentAngle);
+
+    // Tick sound
+    const seg = Math.floor(((-currentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / slice) % N;
+    if (seg !== lastSegment) {
+      playTick();
+      lastSegment = seg;
+    }
+
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      spinning = false;
+      btn.disabled = false;
+      const winner = getWinner(currentAngle);
+      showResult(winner);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function showResult(idx) {
+  const seg = SEGMENTS[idx];
+  document.getElementById('result-name').textContent = seg.name;
+  document.getElementById('result-desc').textContent = seg.desc;
+
+  playFanfare(seg.jackpot);
+
+  // Show modal
+  document.getElementById('modal-type').textContent = seg.type;
+  document.getElementById('modal-title').textContent = seg.name;
+
+  let body = '';
+  if (seg.ingredients) {
+    body += '<p style="color:#C49A6C;font-size:0.8rem;letter-spacing:2px;margin-bottom:4px;">INGREDIENTS</p>';
+    body += '<ul>' + seg.ingredients.map(i => `<li>${i}</li>`).join('') + '</ul>';
+    body += '<p style="color:#C49A6C;font-size:0.8rem;letter-spacing:2px;margin:12px 0 4px;">METHOD</p>';
+    body += '<ol>' + seg.method.map(s => `<li>${s}</li>`).join('') + '</ol>';
+  } else if (seg.info) {
+    body += `<p>${seg.info}</p>`;
+  }
+  document.getElementById('modal-body').innerHTML = body;
+
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('open');
+
+  if (seg.name === 'Spin Again') {
+    setTimeout(() => {
+      overlay.classList.remove('open');
+      spin();
+    }, 2000);
+  }
+}
+
+btn.addEventListener('click', spin);
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget)
+    document.getElementById('modal-overlay').classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.getElementById('modal-overlay').classList.remove('open');
+});
+</script>
+</body>
+</html>

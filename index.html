@@ -201,66 +201,164 @@ let spinning = false;
 function drawWheel(angle) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Outer ring
+  // ── Drop shadow ──────────────────────────────────────────────
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.75)';
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 10;
   ctx.beginPath();
-  ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI);
-  ctx.fillStyle = '#3a0a0a';
+  ctx.arc(cx, cy, R + 12, 0, 2 * Math.PI);
+  ctx.fillStyle = '#150000';
   ctx.fill();
-  ctx.strokeStyle = '#C49A6C';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.restore();
+
+  // ── Outer base ring (depth illusion) ─────────────────────────
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 12, 0, 2 * Math.PI);
+  ctx.fillStyle = '#1a0000';
+  ctx.fill();
+
+  // ── Segments — alternating cream / red ───────────────────────
+  const segFills  = ['#F9EDE0', '#BF2020'];
+  const segText   = ['#7a1010', '#F9EDE0'];
 
   for (let i = 0; i < N; i++) {
     const start = angle + i * slice;
-    const end = start + slice;
-    const seg = SEGMENTS[i];
-
+    const end   = start + slice;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, R, start, end);
     ctx.closePath();
-    ctx.fillStyle = seg.color;
+    ctx.fillStyle = segFills[i % 2];
     ctx.fill();
-    ctx.strokeStyle = '#150000';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+  }
 
-    // Label
+  // ── Global dome lighting (single top-left light source) ──────
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+  ctx.clip();
+
+  const domeGrad = ctx.createRadialGradient(
+    cx - R * 0.28, cy - R * 0.28, R * 0.05,
+    cx, cy, R
+  );
+  domeGrad.addColorStop(0,    'rgba(255,245,230,0.38)');
+  domeGrad.addColorStop(0.42, 'rgba(255,220,185,0.07)');
+  domeGrad.addColorStop(0.72, 'rgba(0,0,0,0.08)');
+  domeGrad.addColorStop(1,    'rgba(0,0,0,0.40)');
+  ctx.fillStyle = domeGrad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  // ── Divider lines — bevelled ──────────────────────────────────
+  for (let i = 0; i < N; i++) {
+    const la = angle + i * slice;
+    const ex = cx + Math.cos(la) * R;
+    const ey = cy + Math.sin(la) * R;
+    // shadow side
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // highlight side
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = 'rgba(255,230,200,0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // ── Labels ────────────────────────────────────────────────────
+  for (let i = 0; i < N; i++) {
+    const start = angle + i * slice;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(start + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#F2D9C0';
+    ctx.fillStyle = segText[i % 2];
     ctx.font = 'bold 11px sans-serif';
-    // Wrap long names
-    const words = seg.name.split(' ');
+    const words = SEGMENTS[i].name.split(' ');
     if (words.length > 2) {
-      ctx.fillText(words.slice(0, 2).join(' '), R - 10, -5);
-      ctx.fillText(words.slice(2).join(' '), R - 10, 8);
+      ctx.fillText(words.slice(0, 2).join(' '), R - 12, -5);
+      ctx.fillText(words.slice(2).join(' '),    R - 12,  8);
     } else {
-      ctx.fillText(seg.name, R - 10, 4);
+      ctx.fillText(SEGMENTS[i].name, R - 12, 4);
     }
     ctx.restore();
   }
 
-  // Centre cap
+  // ── Rim — inner highlight edge ────────────────────────────────
   ctx.beginPath();
-  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
-  ctx.fillStyle = '#150000';
-  ctx.fill();
-  ctx.strokeStyle = '#C49A6C';
+  ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(255,215,160,0.55)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Pointer at 3 o'clock (right side)
-  const px = cx + R + 6;
+  // Dark band
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 7, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#120000';
+  ctx.lineWidth = 14;
+  ctx.stroke();
+
+  // Copper outer ring
+  const rimGrad = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  rimGrad.addColorStop(0,    '#e8c07a');
+  rimGrad.addColorStop(0.35, '#C49A6C');
+  rimGrad.addColorStop(0.65, '#96703a');
+  rimGrad.addColorStop(1,    '#5a3a10');
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI);
+  ctx.strokeStyle = rimGrad;
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  // ── Centre cap — polished metal dome ─────────────────────────
+  const capGrad = ctx.createRadialGradient(cx - 7, cy - 7, 2, cx, cy, 22);
+  capGrad.addColorStop(0,   '#f0d090');
+  capGrad.addColorStop(0.4, '#C49A6C');
+  capGrad.addColorStop(0.8, '#7a4820');
+  capGrad.addColorStop(1,   '#2e1000');
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = capGrad;
+  ctx.fill();
+
+  // Cap rim
+  ctx.strokeStyle = 'rgba(240,200,130,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Cap specular
+  const specGrad = ctx.createRadialGradient(cx - 8, cy - 8, 1, cx - 5, cy - 5, 12);
+  specGrad.addColorStop(0, 'rgba(255,255,255,0.65)');
+  specGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = specGrad;
+  ctx.fill();
+
+  // ── Pointer at 3 o'clock ──────────────────────────────────────
+  const px = cx + R + 8;
+  const pGrad = ctx.createLinearGradient(px, cy - 10, px, cy + 10);
+  pGrad.addColorStop(0,   '#FFFFFF');
+  pGrad.addColorStop(0.4, '#F9EDE0');
+  pGrad.addColorStop(1,   '#C49A6C');
   ctx.beginPath();
   ctx.moveTo(px + 16, cy);
-  ctx.lineTo(px, cy - 9);
-  ctx.lineTo(px, cy + 9);
+  ctx.lineTo(px, cy - 10);
+  ctx.lineTo(px, cy + 10);
   ctx.closePath();
-  ctx.fillStyle = '#F2D9C0';
+  ctx.fillStyle = pGrad;
   ctx.fill();
+  ctx.strokeStyle = '#8B1A1A';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 }
 
 drawWheel(0);

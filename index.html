@@ -6,68 +6,91 @@
 <title>Rum Roulette – Junge Kaji</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     background: #150000;
     color: #F2D9C0;
     font-family: sans-serif;
     min-height: 100vh;
+  }
+
+  /* ── Two-column grid ─────────────────────────────────── */
+  #layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Left panel ──────────────────────────────────────── */
+  #left-panel {
     display: flex;
-    align-items: center;
-    justify-content: center;
     flex-direction: column;
-    gap: 24px;
-    padding: 24px;
+    justify-content: center;
+    gap: 28px;
+    padding: 48px 40px;
+    border-right: 1px solid #2a0505;
   }
+
+  #left-panel img {
+    max-height: 72px;
+    object-fit: contain;
+    align-self: flex-start;
+  }
+
   h1 {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     color: #BF2020;
-    letter-spacing: 2px;
-    text-align: center;
+    letter-spacing: 3px;
+    line-height: 1.1;
   }
+
   p.tagline {
     color: #C49A6C;
-    text-align: center;
-    letter-spacing: 4px;
-    font-size: 0.85rem;
+    letter-spacing: 5px;
+    font-size: 0.8rem;
+    margin-top: -16px;
   }
-  #wheel-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+  #result {
+    background: #1e0202;
+    border: 1px solid #3a0808;
+    border-radius: 8px;
+    padding: 20px 24px;
   }
-  canvas { display: block; }
+  #result .label { color: #C49A6C; font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 6px; }
+  #result .name  { color: #F2D9C0; font-size: 1.5rem; font-weight: bold; }
+  #result .desc  { color: #9A7A5A; font-size: 0.88rem; margin-top: 6px; }
+
   #spin-btn {
     background: #BF2020;
     color: #F9EDE0;
     border: none;
-    padding: 14px 48px;
-    font-size: 1.2rem;
-    letter-spacing: 2px;
+    padding: 16px 0;
+    font-size: 1.1rem;
+    letter-spacing: 3px;
     cursor: pointer;
     border-radius: 4px;
+    width: 100%;
     transition: background 0.2s;
   }
-  #spin-btn:hover { background: #8B1A1A; }
-  #spin-btn:disabled { background: #4a1010; cursor: not-allowed; }
-  #result {
-    background: #2a0505;
-    border: 1px solid #8B1A1A;
-    border-radius: 8px;
-    padding: 20px 32px;
-    text-align: center;
-    min-width: 280px;
-    min-height: 60px;
-  }
-  #result .label { color: #C49A6C; font-size: 0.8rem; letter-spacing: 3px; margin-bottom: 6px; }
-  #result .name { color: #F2D9C0; font-size: 1.4rem; }
-  #result .desc { color: #9A7A5A; font-size: 0.9rem; margin-top: 6px; }
+  #spin-btn:hover    { background: #8B1A1A; }
+  #spin-btn:disabled { background: #3a0808; cursor: not-allowed; }
 
-  /* Modal */
+  /* ── Right panel ─────────────────────────────────────── */
+  #right-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  canvas { display: block; }
+
+  /* ── Modal ───────────────────────────────────────────── */
   #modal-overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0,0,0,0.78);
     z-index: 100;
     align-items: center;
     justify-content: center;
@@ -78,39 +101,62 @@
     border: 1px solid #8B1A1A;
     border-radius: 10px;
     padding: 32px;
-    max-width: 420px;
+    max-width: 440px;
     width: 90%;
     position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
   }
-  #modal h2 { color: #BF2020; margin-bottom: 6px; }
-  #modal .modal-type { color: #C49A6C; font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 16px; }
-  #modal p { color: #F2D9C0; line-height: 1.7; font-size: 0.95rem; }
-  #modal ul { color: #F9EDE0; padding-left: 18px; margin: 10px 0; line-height: 1.8; font-size: 0.9rem; }
-  #modal ol { color: #F9EDE0; padding-left: 18px; margin: 10px 0; line-height: 1.8; font-size: 0.9rem; }
+  #modal h2          { color: #BF2020; margin-bottom: 6px; font-size: 1.4rem; }
+  #modal .modal-type { color: #C49A6C; font-size: 0.72rem; letter-spacing: 3px; margin-bottom: 14px; }
+  #modal p  { color: #F2D9C0; line-height: 1.7; font-size: 0.95rem; }
+  #modal ul { color: #F9EDE0; padding-left: 18px; margin: 8px 0; line-height: 1.8; font-size: 0.9rem; }
+  #modal ol { color: #F9EDE0; padding-left: 18px; margin: 8px 0; line-height: 1.8; font-size: 0.9rem; }
   #modal-close {
     position: absolute; top: 12px; right: 16px;
     background: none; border: none; color: #9A7A5A;
     font-size: 1.4rem; cursor: pointer;
   }
   #modal-close:hover { color: #F2D9C0; }
+
+  /* ── Mobile: stack ───────────────────────────────────── */
+  @media (max-width: 720px) {
+    #layout {
+      grid-template-columns: 1fr;
+    }
+    #left-panel {
+      border-right: none;
+      border-bottom: 1px solid #2a0505;
+      padding: 32px 24px;
+    }
+    #right-panel { padding: 32px 16px; }
+  }
 </style>
 </head>
 <body>
 
-<img src="./Asset 18@4x.png" alt="Junge Kaji" style="max-height:70px;object-fit:contain;">
-<h1>RUM ROULETTE</h1>
-<p class="tagline">SPIN · SIP · SURRENDER</p>
+<div id="layout">
 
-<div id="wheel-wrap">
-  <canvas id="wheel" width="360" height="360"></canvas>
-</div>
+  <!-- LEFT -->
+  <div id="left-panel">
+    <img src="./Asset 18@4x.png" alt="Junge Kaji" onerror="this.style.display='none'">
+    <div>
+      <h1>RUM ROULETTE</h1>
+      <p class="tagline">SPIN · SIP · SURRENDER</p>
+    </div>
+    <div id="result">
+      <div class="label">RESULT</div>
+      <div class="name" id="result-name">—</div>
+      <div class="desc" id="result-desc"></div>
+    </div>
+    <button id="spin-btn">SPIN</button>
+  </div>
 
-<button id="spin-btn">SPIN</button>
+  <!-- RIGHT -->
+  <div id="right-panel">
+    <canvas id="wheel" width="560" height="560"></canvas>
+  </div>
 
-<div id="result">
-  <div class="label">RESULT</div>
-  <div class="name" id="result-name">—</div>
-  <div class="desc" id="result-desc"></div>
 </div>
 
 <!-- Modal -->
@@ -128,7 +174,6 @@ const SEGMENTS = [
   {
     name: "The Classic",
     type: "COCKTAIL",
-    color: "#8B1A1A",
     desc: "Highland Rum & Soda",
     ingredients: ["60ml Highland Rum","15ml lime juice","10ml simple syrup","Soda water","Lime to garnish"],
     method: ["Fill glass with ice.","Pour rum and lime juice.","Add simple syrup.","Top with soda water.","Garnish with lime."]
@@ -136,14 +181,12 @@ const SEGMENTS = [
   {
     name: "Merch Drop",
     type: "GIFT",
-    color: "#5a2a00",
     desc: "Branded tumbler or bandana",
     info: "Show this result to your bartender to claim your Junge Kaji merch. One per customer."
   },
   {
     name: "The Daredevil",
     type: "COCKTAIL",
-    color: "#BF2020",
     desc: "Spiced Chili-Mango Rum Fizz",
     ingredients: ["60ml Highland Spiced Rum","45ml mango purée","15ml chili syrup","20ml lime juice","Ginger beer","Chili & lime to garnish"],
     method: ["Muddle chili in shaker.","Add rum, mango, syrup, lime with ice.","Shake hard for 15 seconds.","Strain over fresh ice.","Top with ginger beer, garnish."]
@@ -151,14 +194,12 @@ const SEGMENTS = [
   {
     name: "Double Down",
     type: "OFFER",
-    color: "#3d1a00",
     desc: "Buy 1 Get 1 Free",
     info: "Valid on any Junge Kaji cocktail. Show this screen to your bartender. One use per visit."
   },
   {
     name: "The Fresh Start",
     type: "COCKTAIL",
-    color: "#6b1010",
     desc: "Highland Mojito",
     ingredients: ["50ml Highland Rum","25ml lime juice","15ml sugar syrup","12–15 fresh mint leaves","Soda water","Mint & lime to garnish"],
     method: ["Clap mint leaves to release aroma.","Muddle lightly with lime juice and syrup.","Fill glass with crushed ice.","Pour in rum.","Top with soda, stir from bottom, garnish."]
@@ -166,14 +207,12 @@ const SEGMENTS = [
   {
     name: "Spin Again",
     type: "WILDCARD",
-    color: "#4a0a0a",
     desc: "The wheel has more to say…",
     info: "Fate isn't done with you. Spinning again in 2 seconds…"
   },
   {
     name: "The Sunset",
     type: "COCKTAIL",
-    color: "#7a1515",
     desc: "Passionfruit & Ginger Punch",
     ingredients: ["50ml Highland Dark Rum","60ml passionfruit juice","20ml ginger syrup","15ml lime juice","Passionfruit to garnish"],
     method: ["Optional: rim glass with chili salt.","Shake all ingredients with ice for 12 seconds.","Strain over large ice cube.","Garnish with halved passionfruit."]
@@ -181,47 +220,47 @@ const SEGMENTS = [
   {
     name: "House Special",
     type: "VIP",
-    color: "#BF2020",
     desc: "Bartender's secret cocktail",
     info: "The recipe changes nightly. Trust the wheel. Ask your bartender — they know what to do.",
     jackpot: true
   }
 ];
 
-// Draw wheel
 const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
-const cx = canvas.width / 2, cy = canvas.height / 2, R = 155;
-const N = SEGMENTS.length;
+const ctx    = canvas.getContext('2d');
+const cx = canvas.width / 2;   // 280
+const cy = canvas.height / 2;  // 280
+const R  = 240;
+const N  = SEGMENTS.length;
 const slice = (2 * Math.PI) / N;
 
 let currentAngle = 0;
-let spinning = false;
+let spinning     = false;
 
 function drawWheel(angle) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // ── Drop shadow ──────────────────────────────────────────────
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.75)';
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetX = 5;
-  ctx.shadowOffsetY = 10;
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur  = 40;
+  ctx.shadowOffsetX = 6;
+  ctx.shadowOffsetY = 12;
   ctx.beginPath();
-  ctx.arc(cx, cy, R + 12, 0, 2 * Math.PI);
+  ctx.arc(cx, cy, R + 14, 0, 2 * Math.PI);
   ctx.fillStyle = '#150000';
   ctx.fill();
   ctx.restore();
 
-  // ── Outer base ring (depth illusion) ─────────────────────────
+  // ── Outer base ring ───────────────────────────────────────────
   ctx.beginPath();
-  ctx.arc(cx, cy, R + 12, 0, 2 * Math.PI);
+  ctx.arc(cx, cy, R + 14, 0, 2 * Math.PI);
   ctx.fillStyle = '#1a0000';
   ctx.fill();
 
   // ── Segments — alternating cream / red ───────────────────────
-  const segFills  = ['#F9EDE0', '#BF2020'];
-  const segText   = ['#7a1010', '#F9EDE0'];
+  const segFills = ['#F9EDE0', '#BF2020'];
+  const segText  = ['#7a1010', '#F9EDE0'];
 
   for (let i = 0; i < N; i++) {
     const start = angle + i * slice;
@@ -234,37 +273,34 @@ function drawWheel(angle) {
     ctx.fill();
   }
 
-  // ── Global dome lighting (single top-left light source) ──────
+  // ── Dome lighting — single top-left source ────────────────────
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, 2 * Math.PI);
   ctx.clip();
-
-  const domeGrad = ctx.createRadialGradient(
-    cx - R * 0.28, cy - R * 0.28, R * 0.05,
+  const dome = ctx.createRadialGradient(
+    cx - R * 0.28, cy - R * 0.28, R * 0.04,
     cx, cy, R
   );
-  domeGrad.addColorStop(0,    'rgba(255,245,230,0.38)');
-  domeGrad.addColorStop(0.42, 'rgba(255,220,185,0.07)');
-  domeGrad.addColorStop(0.72, 'rgba(0,0,0,0.08)');
-  domeGrad.addColorStop(1,    'rgba(0,0,0,0.40)');
-  ctx.fillStyle = domeGrad;
+  dome.addColorStop(0,    'rgba(255,245,230,0.40)');
+  dome.addColorStop(0.42, 'rgba(255,220,185,0.08)');
+  dome.addColorStop(0.72, 'rgba(0,0,0,0.08)');
+  dome.addColorStop(1,    'rgba(0,0,0,0.42)');
+  ctx.fillStyle = dome;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // ── Divider lines — bevelled ──────────────────────────────────
+  // ── Bevelled dividers ─────────────────────────────────────────
   for (let i = 0; i < N; i++) {
     const la = angle + i * slice;
     const ex = cx + Math.cos(la) * R;
     const ey = cy + Math.sin(la) * R;
-    // shadow side
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(ex, ey);
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
     ctx.lineWidth = 2.5;
     ctx.stroke();
-    // highlight side
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(ex, ey);
@@ -281,80 +317,79 @@ function drawWheel(angle) {
     ctx.rotate(start + slice / 2);
     ctx.textAlign = 'right';
     ctx.fillStyle = segText[i % 2];
-    ctx.font = 'bold 11px sans-serif';
+    ctx.font = 'bold 13px sans-serif';
     const words = SEGMENTS[i].name.split(' ');
     if (words.length > 2) {
-      ctx.fillText(words.slice(0, 2).join(' '), R - 12, -5);
-      ctx.fillText(words.slice(2).join(' '),    R - 12,  8);
+      ctx.fillText(words.slice(0, 2).join(' '), R - 16, -6);
+      ctx.fillText(words.slice(2).join(' '),    R - 16,  9);
     } else {
-      ctx.fillText(SEGMENTS[i].name, R - 12, 4);
+      ctx.fillText(SEGMENTS[i].name, R - 16, 5);
     }
     ctx.restore();
   }
 
-  // ── Rim — inner highlight edge ────────────────────────────────
+  // ── Rim — inner edge highlight ────────────────────────────────
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, 2 * Math.PI);
-  ctx.strokeStyle = 'rgba(255,215,160,0.55)';
+  ctx.strokeStyle = 'rgba(255,215,160,0.5)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // Dark band
   ctx.beginPath();
-  ctx.arc(cx, cy, R + 7, 0, 2 * Math.PI);
-  ctx.strokeStyle = '#120000';
-  ctx.lineWidth = 14;
-  ctx.stroke();
-
-  // Copper outer ring
-  const rimGrad = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
-  rimGrad.addColorStop(0,    '#e8c07a');
-  rimGrad.addColorStop(0.35, '#C49A6C');
-  rimGrad.addColorStop(0.65, '#96703a');
-  rimGrad.addColorStop(1,    '#5a3a10');
-  ctx.beginPath();
   ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI);
-  ctx.strokeStyle = rimGrad;
-  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = '#120000';
+  ctx.lineWidth = 16;
   ctx.stroke();
 
-  // ── Centre cap — polished metal dome ─────────────────────────
-  const capGrad = ctx.createRadialGradient(cx - 7, cy - 7, 2, cx, cy, 22);
-  capGrad.addColorStop(0,   '#f0d090');
-  capGrad.addColorStop(0.4, '#C49A6C');
-  capGrad.addColorStop(0.8, '#7a4820');
-  capGrad.addColorStop(1,   '#2e1000');
+  // Copper ring
+  const rimG = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  rimG.addColorStop(0,    '#eac880');
+  rimG.addColorStop(0.35, '#C49A6C');
+  rimG.addColorStop(0.65, '#96703a');
+  rimG.addColorStop(1,    '#5a3a10');
   ctx.beginPath();
-  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
-  ctx.fillStyle = capGrad;
-  ctx.fill();
+  ctx.arc(cx, cy, R + 9, 0, 2 * Math.PI);
+  ctx.strokeStyle = rimG;
+  ctx.lineWidth = 4;
+  ctx.stroke();
 
-  // Cap rim
-  ctx.strokeStyle = 'rgba(240,200,130,0.7)';
+  // ── Centre cap — metallic dome ────────────────────────────────
+  const capR  = 28;
+  const capG  = ctx.createRadialGradient(cx - 8, cy - 8, 2, cx, cy, capR);
+  capG.addColorStop(0,   '#f5d898');
+  capG.addColorStop(0.4, '#C49A6C');
+  capG.addColorStop(0.8, '#7a4820');
+  capG.addColorStop(1,   '#2e1000');
+  ctx.beginPath();
+  ctx.arc(cx, cy, capR, 0, 2 * Math.PI);
+  ctx.fillStyle = capG;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(240,200,130,0.65)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   // Cap specular
-  const specGrad = ctx.createRadialGradient(cx - 8, cy - 8, 1, cx - 5, cy - 5, 12);
-  specGrad.addColorStop(0, 'rgba(255,255,255,0.65)');
-  specGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  const specG = ctx.createRadialGradient(cx - 9, cy - 9, 1, cx - 6, cy - 6, 14);
+  specG.addColorStop(0, 'rgba(255,255,255,0.68)');
+  specG.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.beginPath();
-  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
-  ctx.fillStyle = specGrad;
+  ctx.arc(cx, cy, capR, 0, 2 * Math.PI);
+  ctx.fillStyle = specG;
   ctx.fill();
 
   // ── Pointer at 3 o'clock ──────────────────────────────────────
-  const px = cx + R + 8;
-  const pGrad = ctx.createLinearGradient(px, cy - 10, px, cy + 10);
-  pGrad.addColorStop(0,   '#FFFFFF');
-  pGrad.addColorStop(0.4, '#F9EDE0');
-  pGrad.addColorStop(1,   '#C49A6C');
+  const px = cx + R + 10;
+  const pG = ctx.createLinearGradient(px, cy - 12, px, cy + 12);
+  pG.addColorStop(0,   '#FFFFFF');
+  pG.addColorStop(0.4, '#F9EDE0');
+  pG.addColorStop(1,   '#C49A6C');
   ctx.beginPath();
-  ctx.moveTo(px + 16, cy);
-  ctx.lineTo(px, cy - 10);
-  ctx.lineTo(px, cy + 10);
+  ctx.moveTo(px + 18, cy);
+  ctx.lineTo(px, cy - 12);
+  ctx.lineTo(px, cy + 12);
   ctx.closePath();
-  ctx.fillStyle = pGrad;
+  ctx.fillStyle = pG;
   ctx.fill();
   ctx.strokeStyle = '#8B1A1A';
   ctx.lineWidth = 1;
@@ -363,19 +398,16 @@ function drawWheel(angle) {
 
 drawWheel(0);
 
-// Spin logic
+// ── Spin ──────────────────────────────────────────────────────
 const btn = document.getElementById('spin-btn');
 
 function getWinner(finalAngle) {
-  // Pointer at 0 rad (3 o'clock). Normalize angle to [0, 2PI)
   let a = ((-finalAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   return Math.floor(a / slice) % N;
 }
 
-// Audio
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
-
 function getAudio() {
   if (!audioCtx) audioCtx = new AudioCtx();
   return audioCtx;
@@ -383,8 +415,7 @@ function getAudio() {
 
 function playTick() {
   const ac = getAudio();
-  const o = ac.createOscillator();
-  const g = ac.createGain();
+  const o = ac.createOscillator(), g = ac.createGain();
   o.connect(g); g.connect(ac.destination);
   o.frequency.value = 800;
   g.gain.setValueAtTime(0.15, ac.currentTime);
@@ -394,10 +425,9 @@ function playTick() {
 
 function playFanfare(jackpot) {
   const ac = getAudio();
-  const notes = jackpot ? [523, 659, 784, 1047, 1319] : [523, 659, 784, 1047];
+  const notes = jackpot ? [523,659,784,1047,1319] : [523,659,784,1047];
   notes.forEach((freq, i) => {
-    const o = ac.createOscillator();
-    const g = ac.createGain();
+    const o = ac.createOscillator(), g = ac.createGain();
     o.connect(g); g.connect(ac.destination);
     o.frequency.value = freq;
     const t = ac.currentTime + i * 0.12;
@@ -414,41 +444,30 @@ function spin() {
   btn.disabled = true;
   if (!audioCtx) audioCtx = new AudioCtx();
 
-  const extraSpins = 5 + Math.floor(Math.random() * 5);
-  const randomStop = Math.random() * 2 * Math.PI;
-  const totalAngle = extraSpins * 2 * Math.PI + randomStop;
-  const duration = 4000;
-  const start = performance.now();
+  const totalAngle = (5 + Math.floor(Math.random() * 5)) * 2 * Math.PI + Math.random() * 2 * Math.PI;
+  const duration   = 4000;
+  const start      = performance.now();
   const startAngle = currentAngle;
-  let lastSegment = -1;
+  let lastSegment  = -1;
 
-  function easeOut(t) {
-    return 1 - Math.pow(1 - t, 4);
-  }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
 
   function frame(now) {
-    const elapsed = now - start;
-    const t = Math.min(elapsed / duration, 1);
+    const t = Math.min((now - start) / duration, 1);
     currentAngle = startAngle + totalAngle * easeOut(t);
     drawWheel(currentAngle);
 
-    // Tick sound
-    const seg = Math.floor(((-currentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / slice) % N;
-    if (seg !== lastSegment) {
-      playTick();
-      lastSegment = seg;
-    }
+    const seg = Math.floor(((-currentAngle) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI) / slice) % N;
+    if (seg !== lastSegment) { playTick(); lastSegment = seg; }
 
     if (t < 1) {
       requestAnimationFrame(frame);
     } else {
       spinning = false;
       btn.disabled = false;
-      const winner = getWinner(currentAngle);
-      showResult(winner);
+      showResult(getWinner(currentAngle));
     }
   }
-
   requestAnimationFrame(frame);
 }
 
@@ -456,47 +475,39 @@ function showResult(idx) {
   const seg = SEGMENTS[idx];
   document.getElementById('result-name').textContent = seg.name;
   document.getElementById('result-desc').textContent = seg.desc;
-
   playFanfare(seg.jackpot);
 
-  // Show modal
-  document.getElementById('modal-type').textContent = seg.type;
+  document.getElementById('modal-type').textContent  = seg.type;
   document.getElementById('modal-title').textContent = seg.name;
 
   let body = '';
   if (seg.ingredients) {
-    body += '<p style="color:#C49A6C;font-size:0.8rem;letter-spacing:2px;margin-bottom:4px;">INGREDIENTS</p>';
+    body += '<p style="color:#C49A6C;font-size:0.75rem;letter-spacing:2px;margin-bottom:4px;">INGREDIENTS</p>';
     body += '<ul>' + seg.ingredients.map(i => `<li>${i}</li>`).join('') + '</ul>';
-    body += '<p style="color:#C49A6C;font-size:0.8rem;letter-spacing:2px;margin:12px 0 4px;">METHOD</p>';
+    body += '<p style="color:#C49A6C;font-size:0.75rem;letter-spacing:2px;margin:12px 0 4px;">METHOD</p>';
     body += '<ol>' + seg.method.map(s => `<li>${s}</li>`).join('') + '</ol>';
   } else if (seg.info) {
     body += `<p>${seg.info}</p>`;
   }
   document.getElementById('modal-body').innerHTML = body;
-
-  const overlay = document.getElementById('modal-overlay');
-  overlay.classList.add('open');
+  document.getElementById('modal-overlay').classList.add('open');
 
   if (seg.name === 'Spin Again') {
     setTimeout(() => {
-      overlay.classList.remove('open');
+      document.getElementById('modal-overlay').classList.remove('open');
       spin();
     }, 2000);
   }
 }
 
 btn.addEventListener('click', spin);
-
-document.getElementById('modal-close').addEventListener('click', () => {
-  document.getElementById('modal-overlay').classList.remove('open');
-});
+document.getElementById('modal-close').addEventListener('click', () =>
+  document.getElementById('modal-overlay').classList.remove('open'));
 document.getElementById('modal-overlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget)
-    document.getElementById('modal-overlay').classList.remove('open');
+  if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('open');
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape')
-    document.getElementById('modal-overlay').classList.remove('open');
+  if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open');
 });
 </script>
 </body>
